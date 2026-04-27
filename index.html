@@ -696,6 +696,33 @@
       line-height: 1.55;
     }
 
+    .help-topics {
+      display: grid;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .help-topic {
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .help-topic h3 {
+      margin: 0 0 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      letter-spacing: 0;
+    }
+
+    .help-topic p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .help-topic strong {
+      color: #fff;
+    }
+
     .shortcut-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -728,11 +755,15 @@
     }
 
     .hidden-panel {
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
     }
 
-    .hidden-panel .control-panel {
+    .hidden-panel .card:not(.stats-card) {
       display: none;
+    }
+
+    .hidden-panel .panel-inner {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     @media (max-width: 1180px) {
@@ -877,6 +908,22 @@
           </div>
         </section>
 
+        <section class="card wide stats-card">
+          <div class="card-title">
+            <h2>Stats</h2>
+            <span class="mini-note" id="fpsText">0 fps</span>
+          </div>
+          <div class="stat-grid">
+            <div class="stat"><div class="num" id="genStat">0</div><div class="lbl">Generation</div></div>
+            <div class="stat"><div class="num" id="aliveStat">0</div><div class="lbl">Alive</div></div>
+            <div class="stat"><div class="num" id="densityStat">0.0%</div><div class="lbl">Board density</div></div>
+            <div class="stat"><div class="num" id="deltaStat">±0</div><div class="lbl">Population Δ</div></div>
+          </div>
+          <div class="chart-wrap" aria-label="Species population history">
+            <canvas id="populationCanvas"></canvas>
+          </div>
+        </section>
+
         <section class="card wide">
           <div class="card-title">
             <h2>Ecosystem rules</h2>
@@ -997,22 +1044,6 @@
 
         <section class="card wide">
           <div class="card-title">
-            <h2>Stats</h2>
-            <span class="mini-note" id="fpsText">0 fps</span>
-          </div>
-          <div class="stat-grid">
-            <div class="stat"><div class="num" id="genStat">0</div><div class="lbl">Generation</div></div>
-            <div class="stat"><div class="num" id="aliveStat">0</div><div class="lbl">Alive</div></div>
-            <div class="stat"><div class="num" id="densityStat">0.0%</div><div class="lbl">Board density</div></div>
-            <div class="stat"><div class="num" id="deltaStat">±0</div><div class="lbl">Population Δ</div></div>
-          </div>
-          <div class="chart-wrap" aria-label="Species population history">
-            <canvas id="populationCanvas"></canvas>
-          </div>
-        </section>
-
-        <section class="card wide">
-          <div class="card-title">
             <h2>Save & experiments</h2>
             <span class="mini-note">Local only</span>
           </div>
@@ -1033,7 +1064,21 @@
   <div class="modal" id="helpModal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
       <h2 id="helpTitle">Ecosystem Life rules and shortcuts</h2>
-      <p>This variant keeps Conway’s original birth/survival logic. The twist is that every live cell belongs to a species. A newborn cell chooses its species from the three parents using the selected ecology mode. Predator Ring adds a rock-paper-scissors conversion pressure; Diversity Bias resists monocultures; Mutation Storm creates unstable, colorful invasions.</p>
+      <p>This variant keeps Conway’s original birth/survival logic, then adds species, inheritance, predation, mutation, and painting tools.</p>
+      <div class="help-topics">
+        <section class="help-topic">
+          <h3>Ecosystem rules</h3>
+          <p><strong>B3/S23</strong> controls life and death: live cells survive with 2 or 3 neighbors, and dead cells are born with exactly 3. <strong>Dominance mode</strong> decides which parent species a newborn inherits. <strong>Tie handling</strong> resolves equal influence. <strong>Species count</strong>, <strong>mutation rate</strong>, and <strong>predation pressure</strong> tune biodiversity, surprise color shifts, and predator-ring takeovers.</p>
+        </section>
+        <section class="help-topic">
+          <h3>Painting</h3>
+          <p><strong>Draw</strong> adds the selected species, <strong>Erase</strong> clears cells, <strong>Toggle</strong> flips cells on or off, and <strong>Stamp</strong> places the selected pattern. Use <strong>Paint species</strong> to choose the active species, <strong>Brush radius</strong> to widen freehand edits, and <strong>Cell size</strong> to zoom the simulation grid.</p>
+        </section>
+        <section class="help-topic">
+          <h3>Patterns</h3>
+          <p><strong>Preset</strong> chooses a colony shape such as a glider, pulsar, or Gosper gun. <strong>Pattern species</strong> controls whether the stamp uses one species, random species, a gradient, or alternating rivals. <strong>Place center</strong> drops the pattern in the board center; <strong>Mirror</strong> and <strong>Rotate</strong> change the next stamp orientation.</p>
+        </section>
+      </div>
       <div class="shortcut-grid">
         <div class="shortcut"><span>Play / pause</span><kbd>Space</kbd></div>
         <div class="shortcut"><span>Single generation</span><kbd>S</kbd></div>
