@@ -1,0 +1,2429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ecosystem Life Lab — A Multispecies Conway Variant</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-0: #050611;
+      --bg-1: #071632;
+      --panel: rgba(9, 14, 34, 0.72);
+      --panel-strong: rgba(14, 22, 52, 0.94);
+      --glass: rgba(255, 255, 255, 0.085);
+      --glass-2: rgba(255, 255, 255, 0.145);
+      --border: rgba(255, 255, 255, 0.18);
+      --border-strong: rgba(255, 255, 255, 0.32);
+      --text: #f8fbff;
+      --muted: rgba(248, 251, 255, 0.68);
+      --muted-2: rgba(248, 251, 255, 0.48);
+      --accent: #63f5ff;
+      --accent-2: #ff4fd8;
+      --accent-3: #9cff6a;
+      --warn: #ffe66b;
+      --danger: #ff5f83;
+      --shadow: 0 26px 90px rgba(0, 0, 0, 0.46);
+      --radius-xl: 32px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --control-h: 42px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      overflow-x: hidden;
+      background: var(--bg-0);
+      color: var(--text);
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 9% 13%, rgba(99, 245, 255, 0.46), transparent 34vw),
+        radial-gradient(circle at 84% 6%, rgba(255, 79, 216, 0.38), transparent 30vw),
+        radial-gradient(circle at 76% 90%, rgba(156, 255, 106, 0.28), transparent 38vw),
+        radial-gradient(circle at 20% 84%, rgba(255, 218, 91, 0.18), transparent 32vw),
+        linear-gradient(135deg, var(--bg-0) 0%, var(--bg-1) 48%, #10051d 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      opacity: 0.42;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.052) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+      background-size: 54px 54px;
+      mask-image: radial-gradient(circle at center, black 0, transparent 80%);
+    }
+
+    body::after {
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.22) 0 1px, transparent 2px),
+        radial-gradient(circle at 70% 18%, rgba(255,255,255,0.18) 0 1px, transparent 2px),
+        radial-gradient(circle at 42% 76%, rgba(255,255,255,0.2) 0 1px, transparent 2px),
+        radial-gradient(circle at 86% 64%, rgba(255,255,255,0.22) 0 1px, transparent 2px);
+      background-size: 360px 360px, 280px 280px, 430px 430px, 510px 510px;
+      animation: drift 30s linear infinite;
+      opacity: 0.38;
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(0,0,0); }
+      to { transform: translate3d(-92px, 74px, 0); }
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(336px, 426px);
+      grid-template-rows: auto 1fr;
+      gap: 22px;
+      width: min(1760px, calc(100vw - 32px));
+      max-width: calc(100vw - 32px);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 26px 0;
+    }
+
+    .hero {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 22px 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(120deg, rgba(255,255,255,0.13), rgba(255,255,255,0.055)),
+        linear-gradient(90deg, rgba(99,245,255,0.16), rgba(255,79,216,0.15), rgba(156,255,106,0.11));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(22px);
+    }
+
+    .hero > * {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    h1, h2, p { margin-top: 0; }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 4rem;
+      line-height: 0.98;
+      letter-spacing: 0;
+      overflow-wrap: break-word;
+    }
+
+    .gradient-text {
+      overflow-wrap: anywhere;
+      background: linear-gradient(90deg, #ffffff 0%, #63f5ff 27%, #ff4fd8 57%, #ffe66b 78%, #9cff6a 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 10px 38px rgba(99,245,255,0.22));
+    }
+
+    .subtitle {
+      max-width: 900px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.55;
+      overflow-wrap: break-word;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      min-width: 220px;
+    }
+
+    .stage-shell {
+      position: relative;
+      min-height: 0;
+    }
+
+    .stage {
+      position: sticky;
+      top: 22px;
+      height: calc(100vh - 182px);
+      min-height: 560px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        radial-gradient(circle at 50% 10%, rgba(255,255,255,0.085), transparent 38%),
+        linear-gradient(145deg, rgba(6, 10, 24, 0.88), rgba(6, 14, 36, 0.96));
+      box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,0.08);
+      backdrop-filter: blur(20px);
+    }
+
+    .stage::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(99,245,255,0.16), transparent 26%),
+        radial-gradient(circle at 80% 76%, rgba(255,79,216,0.16), transparent 30%),
+        radial-gradient(circle at 58% 48%, rgba(156,255,106,0.11), transparent 34%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    #lifeCanvas {
+      position: relative;
+      z-index: 1;
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .canvas-hud {
+      position: absolute;
+      z-index: 2;
+      inset: 16px 16px auto;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: 58%;
+      min-width: 0;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      max-width: 100%;
+      min-width: 0;
+      min-height: 34px;
+      padding: 8px 11px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      background: rgba(3, 6, 18, 0.58);
+      color: var(--muted);
+      font-size: 0.8rem;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.22);
+    }
+
+    .chip strong {
+      color: var(--text);
+      font-weight: 800;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .toast {
+      position: absolute;
+      z-index: 3;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(18px);
+      max-width: calc(100% - 32px);
+      padding: 12px 16px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 999px;
+      background: rgba(6, 10, 24, 0.78);
+      color: #fff;
+      font-weight: 750;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.28);
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .control-panel {
+      min-height: 0;
+    }
+
+    .panel-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.105), rgba(255,255,255,0.048)),
+        var(--panel);
+      box-shadow: 0 18px 54px rgba(0,0,0,0.28);
+      backdrop-filter: blur(20px);
+      padding: 16px;
+    }
+
+    .card.wide { grid-column: 1 / -1; }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 13px;
+      min-width: 0;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 0.98rem;
+      letter-spacing: 0;
+      min-width: 0;
+    }
+
+    .mini-note {
+      color: var(--muted-2);
+      font-size: 0.76rem;
+      line-height: 1.25;
+      text-align: right;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(142px, 1fr));
+      gap: 9px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .button-row .btn {
+      flex: 1 1 118px;
+    }
+
+    .btn {
+      min-height: var(--control-h);
+      padding: 8px 14px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.09);
+      color: var(--text);
+      font-weight: 820;
+      letter-spacing: 0;
+      line-height: 1.15;
+      text-align: center;
+      overflow-wrap: break-word;
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.34);
+      background: rgba(255,255,255,0.14);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.16);
+    }
+
+    .btn:active { transform: translateY(0); }
+
+    .btn.primary {
+      color: #04111a;
+      border: 0;
+      background: linear-gradient(135deg, #63f5ff, #9cff6a 52%, #ffe66b);
+      box-shadow: 0 14px 34px rgba(99,245,255,0.2);
+    }
+
+    .btn.danger {
+      border-color: rgba(255,95,131,0.42);
+      background: rgba(255,95,131,0.13);
+      color: #ffdce5;
+    }
+
+    .btn.ghost {
+      padding-inline: 14px;
+      background: rgba(3, 7, 20, 0.32);
+    }
+
+    .btn.small {
+      min-height: 36px;
+      padding: 0 12px;
+      font-size: 0.82rem;
+    }
+
+    .control {
+      margin-top: 13px;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 760;
+      line-height: 1.25;
+    }
+
+    output,
+    .value {
+      color: #fff;
+      font-weight: 850;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    select {
+      width: 100%;
+      min-height: var(--control-h);
+      padding: 0 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 14px;
+      background: rgba(2, 6, 18, 0.6);
+      color: var(--text);
+      font-weight: 760;
+      outline: none;
+    }
+
+    select:focus,
+    .btn:focus-visible,
+    input:focus-visible {
+      outline: 2px solid rgba(99,245,255,0.62);
+      outline-offset: 2px;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      background: rgba(0,0,0,0.22);
+    }
+
+    .segmented button {
+      min-height: 34px;
+      min-width: 0;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 850;
+      line-height: 1.05;
+      cursor: pointer;
+    }
+
+    .segmented button.active {
+      color: #04111a;
+      background: linear-gradient(135deg, #63f5ff, #ff4fd8);
+      box-shadow: 0 10px 24px rgba(99,245,255,0.18);
+    }
+
+    .toggle-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .toggle {
+      min-height: 38px;
+      padding: 8px 10px;
+      margin: 0;
+      flex-wrap: nowrap;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.05);
+      cursor: pointer;
+    }
+
+    .toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.16);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+      transition: background 160ms ease;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 160ms ease;
+    }
+
+    .toggle input:checked + .switch {
+      background: linear-gradient(135deg, #63f5ff, #9cff6a);
+    }
+
+    .toggle input:checked + .switch::after {
+      transform: translateX(18px);
+      background: #07101d;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+      gap: 9px;
+    }
+
+    .stat {
+      min-height: 76px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 17px;
+      background:
+        radial-gradient(circle at top left, rgba(99,245,255,0.14), transparent 58%),
+        rgba(255,255,255,0.06);
+    }
+
+    .stat .num {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #fff;
+      font-size: 1.24rem;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .stat .lbl {
+      margin-top: 3px;
+      color: var(--muted-2);
+      font-size: 0.72rem;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .chart-wrap {
+      margin-top: 11px;
+      overflow: hidden;
+      height: 104px;
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 18px;
+      background: rgba(0,0,0,0.18);
+    }
+
+    #populationCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .species-roster {
+      display: grid;
+      gap: 8px;
+    }
+
+    .species-row {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) minmax(3ch, auto);
+      gap: 9px;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+      min-height: 42px;
+      padding: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 15px;
+      background: rgba(255,255,255,0.048);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 140ms ease, transform 140ms ease, background 140ms ease;
+    }
+
+    .species-row:hover,
+    .species-row.active {
+      transform: translateY(-1px);
+      border-color: var(--species-color, rgba(255,255,255,0.34));
+      background: rgba(255,255,255,0.075);
+    }
+
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 9px;
+      background: var(--species-color);
+      box-shadow: 0 0 20px var(--species-color), inset 0 1px 0 rgba(255,255,255,0.45);
+    }
+
+    .species-main {
+      min-width: 0;
+    }
+
+    .species-name {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 860;
+    }
+
+    .species-name span:first-child {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .species-bar {
+      position: relative;
+      height: 6px;
+      margin-top: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.09);
+    }
+
+    .species-bar span {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--pct, 0%);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--species-color), rgba(255,255,255,0.55));
+      box-shadow: 0 0 16px var(--species-color);
+    }
+
+    .species-count {
+      color: var(--muted);
+      font-size: 0.77rem;
+      font-weight: 800;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .footer-note {
+      margin: 12px 0 0;
+      color: var(--muted-2);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .modal[hidden] { display: none; }
+
+    .modal {
+      position: fixed;
+      z-index: 10;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.58);
+      backdrop-filter: blur(14px);
+    }
+
+    .modal-card {
+      width: min(720px, 100%);
+      max-height: calc(100dvh - 40px);
+      overflow: auto;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      background:
+        radial-gradient(circle at top left, rgba(99,245,255,0.16), transparent 38%),
+        radial-gradient(circle at bottom right, rgba(255,79,216,0.14), transparent 42%),
+        rgba(9, 14, 34, 0.96);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .modal-card p {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .shortcut-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .shortcut {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 12px;
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.055);
+      color: var(--muted);
+      font-weight: 730;
+    }
+
+    kbd {
+      min-width: 34px;
+      padding: 4px 8px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 9px;
+      background: rgba(0,0,0,0.28);
+      color: #fff;
+      text-align: center;
+      box-shadow: inset 0 -1px 0 rgba(255,255,255,0.12);
+    }
+
+    .hidden-panel {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hidden-panel .control-panel {
+      display: none;
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 3.35rem;
+      }
+      .stage {
+        position: relative;
+        top: auto;
+        height: 64vh;
+        min-height: 460px;
+      }
+      .panel-inner {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app {
+        width: calc(100vw - 20px);
+        max-width: calc(100vw - 20px);
+        padding: 12px 0 18px;
+        gap: 12px;
+      }
+      .hero {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 18px;
+      }
+      h1 {
+        font-size: 2.6rem;
+      }
+      .subtitle {
+        font-size: 1rem;
+      }
+      .hero-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        width: 100%;
+        min-width: 0;
+      }
+      .stage { min-height: 420px; height: 62vh; }
+      .panel-inner { grid-template-columns: 1fr; }
+      .canvas-hud {
+        inset: 10px 10px auto;
+        flex-direction: column;
+      }
+      .chip-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        width: 100%;
+        max-width: 100%;
+      }
+      .chip {
+        justify-content: center;
+      }
+      .chip strong {
+        white-space: normal;
+      }
+      .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .shortcut-grid { grid-template-columns: 1fr; }
+      .segmented { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .toast { max-width: calc(100% - 28px); white-space: normal; text-align: center; }
+    }
+
+    @media (max-width: 430px) {
+      h1 {
+        font-size: 1.95rem;
+      }
+      .eyebrow {
+        font-size: 0.68rem;
+      }
+      .subtitle {
+        font-size: 0.96rem;
+      }
+      .btn {
+        padding-inline: 10px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <header class="hero" aria-label="Application header">
+      <div>
+        <p class="eyebrow">Ecosystem Life Lab</p>
+        <h1><span class="gradient-text">Multispecies <wbr>Conway</span></h1>
+        <p class="subtitle">A living cellular ecology: classic B3/S23 survival, but every live cell has a species. Births inherit local influence, predators can flip territory, rare mutations spark invasions, and the population chart tracks the balance of power.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn ghost" id="togglePanelBtn" type="button">Hide controls</button>
+        <button class="btn ghost" id="helpBtn" type="button">Rules & shortcuts</button>
+      </div>
+    </header>
+
+    <section class="stage-shell" aria-label="Ecosystem board">
+      <div class="stage" id="stage">
+        <canvas id="lifeCanvas" aria-label="Interactive Ecosystem Life canvas"></canvas>
+        <div class="canvas-hud" aria-hidden="true">
+          <div class="chip-row">
+            <div class="chip">Tool <strong id="toolChip">Draw</strong></div>
+            <div class="chip">Species <strong id="speciesChip">Cyan bloom</strong></div>
+            <div class="chip">Rule <strong id="ruleChip">Majority</strong></div>
+          </div>
+          <div class="chip-row">
+            <div class="chip">Cells <strong id="gridChip">0 × 0</strong></div>
+            <div class="chip">Dominant <strong id="dominantChip">None</strong></div>
+            <div class="chip">Status <strong id="statusChip">Paused</strong></div>
+          </div>
+        </div>
+        <div class="toast" id="toast" role="status" aria-live="polite">Ready</div>
+      </div>
+    </section>
+
+    <aside class="control-panel" aria-label="Simulation controls">
+      <div class="panel-inner">
+        <section class="card wide">
+          <div class="card-title">
+            <h2>Simulation</h2>
+            <span class="mini-note">Space toggles play</span>
+          </div>
+          <div class="button-grid">
+            <button class="btn primary" id="playBtn" type="button">▶ Play</button>
+            <button class="btn" id="stepBtn" type="button">Step</button>
+            <button class="btn" id="randomBtn" type="button">Randomize</button>
+            <button class="btn danger" id="clearBtn" type="button">Clear</button>
+          </div>
+          <div class="control">
+            <label for="speedSlider">Speed <output id="speedOut">18 gps</output></label>
+            <input id="speedSlider" type="range" min="1" max="72" step="1" value="18" />
+          </div>
+          <div class="control">
+            <label for="densitySlider">Random density <output id="densityOut">24%</output></label>
+            <input id="densitySlider" type="range" min="3" max="70" step="1" value="24" />
+          </div>
+        </section>
+
+        <section class="card wide">
+          <div class="card-title">
+            <h2>Ecosystem rules</h2>
+            <span class="mini-note">B3/S23 core</span>
+          </div>
+          <div class="control">
+            <label for="dominanceSelect">Dominance mode <span class="value" id="dominanceName">Majority ecology</span></label>
+            <select id="dominanceSelect">
+              <option value="majority">Majority ecology</option>
+              <option value="predator">Predator ring</option>
+              <option value="diversity">Diversity bias</option>
+              <option value="volatile">Mutation storm</option>
+            </select>
+          </div>
+          <div class="control">
+            <label for="tieSelect">Tie handling <span class="value" id="tieName">Random parent</span></label>
+            <select id="tieSelect">
+              <option value="random">Random parent</option>
+              <option value="rarest">Favor rarest species</option>
+              <option value="predator">Predator wins ties</option>
+            </select>
+          </div>
+          <div class="control">
+            <label for="speciesSlider">Species count <output id="speciesOut">6</output></label>
+            <input id="speciesSlider" type="range" min="2" max="12" step="1" value="6" />
+          </div>
+          <div class="control">
+            <label for="mutationSlider">Mutation rate <output id="mutationOut">0.35%</output></label>
+            <input id="mutationSlider" type="range" min="0" max="5" step="0.05" value="0.35" />
+          </div>
+          <div class="control">
+            <label for="pressureSlider">Predation pressure <output id="pressureOut">42%</output></label>
+            <input id="pressureSlider" type="range" min="0" max="100" step="1" value="42" />
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <h2>Painting</h2>
+            <span class="mini-note">Drag on canvas</span>
+          </div>
+          <div class="segmented" role="tablist" aria-label="Brush tools">
+            <button class="active" data-tool="draw" type="button">Draw</button>
+            <button data-tool="erase" type="button">Erase</button>
+            <button data-tool="toggle" type="button">Toggle</button>
+            <button data-tool="stamp" type="button">Stamp</button>
+          </div>
+          <div class="control">
+            <label for="speciesSelect">Paint species <span class="value" id="speciesName">Cyan bloom</span></label>
+            <select id="speciesSelect"></select>
+          </div>
+          <div class="control">
+            <label for="brushSlider">Brush radius <output id="brushOut">1</output></label>
+            <input id="brushSlider" type="range" min="0" max="9" step="1" value="1" />
+          </div>
+          <div class="control">
+            <label for="cellSlider">Cell size <output id="cellOut">10 px</output></label>
+            <input id="cellSlider" type="range" min="4" max="24" step="1" value="10" />
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <h2>Patterns</h2>
+            <span class="mini-note">Stamp colonies</span>
+          </div>
+          <div class="control">
+            <label for="patternSelect">Preset <span class="value" id="patternName">Glider</span></label>
+            <select id="patternSelect">
+              <option value="glider">Glider</option>
+              <option value="lwss">Lightweight spaceship</option>
+              <option value="pulsar">Pulsar</option>
+              <option value="gosper">Gosper glider gun</option>
+              <option value="acorn">Acorn</option>
+              <option value="rPentomino">R-pentomino</option>
+              <option value="diehard">Diehard</option>
+              <option value="beacon">Beacon</option>
+              <option value="galaxy">Kok's galaxy</option>
+            </select>
+          </div>
+          <div class="control">
+            <label for="patternModeSelect">Pattern species <span class="value" id="patternModeName">Selected</span></label>
+            <select id="patternModeSelect">
+              <option value="selected">Selected species</option>
+              <option value="random">Random species</option>
+              <option value="gradient">Prismatic gradient</option>
+              <option value="rivals">Alternating rivals</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button class="btn small" id="centerPatternBtn" type="button">Place center</button>
+            <button class="btn small" id="mirrorPatternBtn" type="button">Mirror</button>
+            <button class="btn small" id="rotatePatternBtn" type="button">Rotate</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <h2>Visuals</h2>
+            <span class="mini-note">Territory glow</span>
+          </div>
+          <div class="toggle-list">
+            <label class="toggle">Fading trails <input id="trailsToggle" type="checkbox" checked /><span class="switch"></span></label>
+            <label class="toggle">Grid lines <input id="gridToggle" type="checkbox" checked /><span class="switch"></span></label>
+            <label class="toggle">Wrap edges <input id="wrapToggle" type="checkbox" checked /><span class="switch"></span></label>
+            <label class="toggle">Neon glow <input id="glowToggle" type="checkbox" checked /><span class="switch"></span></label>
+            <label class="toggle">Age shimmer <input id="shimmerToggle" type="checkbox" checked /><span class="switch"></span></label>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <h2>Species roster</h2>
+            <span class="mini-note">Click to paint</span>
+          </div>
+          <div class="species-roster" id="speciesRoster"></div>
+        </section>
+
+        <section class="card wide">
+          <div class="card-title">
+            <h2>Stats</h2>
+            <span class="mini-note" id="fpsText">0 fps</span>
+          </div>
+          <div class="stat-grid">
+            <div class="stat"><div class="num" id="genStat">0</div><div class="lbl">Generation</div></div>
+            <div class="stat"><div class="num" id="aliveStat">0</div><div class="lbl">Alive</div></div>
+            <div class="stat"><div class="num" id="densityStat">0.0%</div><div class="lbl">Board density</div></div>
+            <div class="stat"><div class="num" id="deltaStat">±0</div><div class="lbl">Population Δ</div></div>
+          </div>
+          <div class="chart-wrap" aria-label="Species population history">
+            <canvas id="populationCanvas"></canvas>
+          </div>
+        </section>
+
+        <section class="card wide">
+          <div class="card-title">
+            <h2>Save & experiments</h2>
+            <span class="mini-note">Local only</span>
+          </div>
+          <div class="button-grid">
+            <button class="btn" id="saveStateBtn" type="button">Save state</button>
+            <button class="btn" id="loadStateBtn" type="button">Load state</button>
+            <button class="btn" id="pngBtn" type="button">Export PNG</button>
+            <button class="btn" id="balanceBtn" type="button">Balance species</button>
+            <button class="btn" id="surpriseBtn" type="button">Seed ecosystem</button>
+            <button class="btn" id="invasionBtn" type="button">Invasion pulse</button>
+          </div>
+          <p class="footer-note">Rule: live cells survive with 2 or 3 neighbors; dead cells are born with exactly 3. Newborn species inherit local influence, with optional mutation and predation. Shortcuts: <strong>Space</strong> play, <strong>S</strong> step, <strong>R</strong> randomize, <strong>C</strong> clear, <strong>G</strong> grid, <strong>T</strong> trails, <strong>1–4</strong> tools.</p>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <div class="modal" id="helpModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <h2 id="helpTitle">Ecosystem Life rules and shortcuts</h2>
+      <p>This variant keeps Conway’s original birth/survival logic. The twist is that every live cell belongs to a species. A newborn cell chooses its species from the three parents using the selected ecology mode. Predator Ring adds a rock-paper-scissors conversion pressure; Diversity Bias resists monocultures; Mutation Storm creates unstable, colorful invasions.</p>
+      <div class="shortcut-grid">
+        <div class="shortcut"><span>Play / pause</span><kbd>Space</kbd></div>
+        <div class="shortcut"><span>Single generation</span><kbd>S</kbd></div>
+        <div class="shortcut"><span>Randomize</span><kbd>R</kbd></div>
+        <div class="shortcut"><span>Clear board</span><kbd>C</kbd></div>
+        <div class="shortcut"><span>Toggle grid</span><kbd>G</kbd></div>
+        <div class="shortcut"><span>Toggle trails</span><kbd>T</kbd></div>
+        <div class="shortcut"><span>Cycle tools</span><kbd>1–4</kbd></div>
+        <div class="shortcut"><span>Close this panel</span><kbd>Esc</kbd></div>
+      </div>
+      <div class="button-row">
+        <button class="btn primary" id="closeHelpBtn" type="button">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const $ = (sel, root = document) => root.querySelector(sel);
+      const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+      const app = $('#app');
+      const stage = $('#stage');
+      const canvas = $('#lifeCanvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      const chartCanvas = $('#populationCanvas');
+      const chartCtx = chartCanvas.getContext('2d', { alpha: true });
+
+      if (!CanvasRenderingContext2D.prototype.roundRect) {
+        CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+          const r = Math.min(radius || 0, width / 2, height / 2);
+          this.moveTo(x + r, y);
+          this.arcTo(x + width, y, x + width, y + height, r);
+          this.arcTo(x + width, y + height, x, y + height, r);
+          this.arcTo(x, y + height, x, y, r);
+          this.arcTo(x, y, x + width, y, r);
+          this.closePath();
+          return this;
+        };
+      }
+
+      const MAX_SPECIES = 12;
+      const speciesMeta = [
+        { name: 'Cyan bloom', hue: 188 },
+        { name: 'Magenta veil', hue: 315 },
+        { name: 'Solar spore', hue: 48 },
+        { name: 'Viridian moss', hue: 128 },
+        { name: 'Ember coral', hue: 16 },
+        { name: 'Violet tide', hue: 262 },
+        { name: 'Azure drift', hue: 214 },
+        { name: 'Rose mantle', hue: 344 },
+        { name: 'Lime filament', hue: 92 },
+        { name: 'Amber pulse', hue: 36 },
+        { name: 'Ultraviolet', hue: 286 },
+        { name: 'Mint ghost', hue: 164 },
+      ];
+
+      const patternDefs = {
+        glider: {
+          label: 'Glider',
+          cells: [[1,0],[2,1],[0,2],[1,2],[2,2]],
+        },
+        lwss: {
+          label: 'Lightweight spaceship',
+          cells: [[1,0],[4,0],[0,1],[0,2],[4,2],[0,3],[1,3],[2,3],[3,3]],
+        },
+        pulsar: {
+          label: 'Pulsar',
+          cells: [
+            [2,0],[3,0],[4,0],[8,0],[9,0],[10,0],
+            [0,2],[5,2],[7,2],[12,2],[0,3],[5,3],[7,3],[12,3],[0,4],[5,4],[7,4],[12,4],
+            [2,5],[3,5],[4,5],[8,5],[9,5],[10,5],
+            [2,7],[3,7],[4,7],[8,7],[9,7],[10,7],
+            [0,8],[5,8],[7,8],[12,8],[0,9],[5,9],[7,9],[12,9],[0,10],[5,10],[7,10],[12,10],
+            [2,12],[3,12],[4,12],[8,12],[9,12],[10,12]
+          ],
+        },
+        gosper: {
+          label: 'Gosper glider gun',
+          cells: [
+            [24,0],[22,1],[24,1],[12,2],[13,2],[20,2],[21,2],[34,2],[35,2],
+            [11,3],[15,3],[20,3],[21,3],[34,3],[35,3],[0,4],[1,4],[10,4],[16,4],[20,4],[21,4],
+            [0,5],[1,5],[10,5],[14,5],[16,5],[17,5],[22,5],[24,5],[10,6],[16,6],[24,6],
+            [11,7],[15,7],[12,8],[13,8]
+          ],
+        },
+        acorn: {
+          label: 'Acorn',
+          cells: [[1,0],[3,1],[0,2],[1,2],[4,2],[5,2],[6,2]],
+        },
+        rPentomino: {
+          label: 'R-pentomino',
+          cells: [[1,0],[2,0],[0,1],[1,1],[1,2]],
+        },
+        diehard: {
+          label: 'Diehard',
+          cells: [[6,0],[0,1],[1,1],[1,2],[5,2],[6,2],[7,2]],
+        },
+        beacon: {
+          label: 'Beacon',
+          cells: [[0,0],[1,0],[0,1],[3,2],[2,3],[3,3]],
+        },
+        galaxy: {
+          label: "Kok's galaxy",
+          cells: [
+            [0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],
+            [0,2],[1,2],[0,3],[1,3],[0,4],[1,4],[0,5],[1,5],
+            [6,3],[7,3],[6,4],[7,4],[6,5],[7,5],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7]
+          ],
+        },
+      };
+
+      const toolLabels = {
+        draw: 'Draw',
+        erase: 'Erase',
+        toggle: 'Toggle',
+        stamp: 'Stamp',
+      };
+
+      const dominanceLabels = {
+        majority: 'Majority ecology',
+        predator: 'Predator ring',
+        diversity: 'Diversity bias',
+        volatile: 'Mutation storm',
+      };
+
+      const tieLabels = {
+        random: 'Random parent',
+        rarest: 'Favor rarest',
+        predator: 'Predator wins',
+      };
+
+      const patternModeLabels = {
+        selected: 'Selected',
+        random: 'Random',
+        gradient: 'Prismatic',
+        rivals: 'Rivals',
+      };
+
+      const controls = {
+        playBtn: $('#playBtn'),
+        stepBtn: $('#stepBtn'),
+        randomBtn: $('#randomBtn'),
+        clearBtn: $('#clearBtn'),
+        speedSlider: $('#speedSlider'),
+        densitySlider: $('#densitySlider'),
+        speciesSlider: $('#speciesSlider'),
+        mutationSlider: $('#mutationSlider'),
+        pressureSlider: $('#pressureSlider'),
+        dominanceSelect: $('#dominanceSelect'),
+        tieSelect: $('#tieSelect'),
+        speciesSelect: $('#speciesSelect'),
+        brushSlider: $('#brushSlider'),
+        cellSlider: $('#cellSlider'),
+        patternSelect: $('#patternSelect'),
+        patternModeSelect: $('#patternModeSelect'),
+        trailsToggle: $('#trailsToggle'),
+        gridToggle: $('#gridToggle'),
+        wrapToggle: $('#wrapToggle'),
+        glowToggle: $('#glowToggle'),
+        shimmerToggle: $('#shimmerToggle'),
+        centerPatternBtn: $('#centerPatternBtn'),
+        mirrorPatternBtn: $('#mirrorPatternBtn'),
+        rotatePatternBtn: $('#rotatePatternBtn'),
+        saveStateBtn: $('#saveStateBtn'),
+        loadStateBtn: $('#loadStateBtn'),
+        pngBtn: $('#pngBtn'),
+        balanceBtn: $('#balanceBtn'),
+        surpriseBtn: $('#surpriseBtn'),
+        invasionBtn: $('#invasionBtn'),
+        helpBtn: $('#helpBtn'),
+        closeHelpBtn: $('#closeHelpBtn'),
+        togglePanelBtn: $('#togglePanelBtn'),
+      };
+
+      const ui = {
+        toast: $('#toast'),
+        speedOut: $('#speedOut'),
+        densityOut: $('#densityOut'),
+        speciesOut: $('#speciesOut'),
+        mutationOut: $('#mutationOut'),
+        pressureOut: $('#pressureOut'),
+        brushOut: $('#brushOut'),
+        cellOut: $('#cellOut'),
+        dominanceName: $('#dominanceName'),
+        tieName: $('#tieName'),
+        speciesName: $('#speciesName'),
+        patternName: $('#patternName'),
+        patternModeName: $('#patternModeName'),
+        genStat: $('#genStat'),
+        aliveStat: $('#aliveStat'),
+        densityStat: $('#densityStat'),
+        deltaStat: $('#deltaStat'),
+        fpsText: $('#fpsText'),
+        gridChip: $('#gridChip'),
+        statusChip: $('#statusChip'),
+        toolChip: $('#toolChip'),
+        speciesChip: $('#speciesChip'),
+        ruleChip: $('#ruleChip'),
+        dominantChip: $('#dominantChip'),
+        speciesRoster: $('#speciesRoster'),
+        helpModal: $('#helpModal'),
+      };
+
+      const state = {
+        cols: 0,
+        rows: 0,
+        width: 0,
+        height: 0,
+        cellSize: 10,
+        brushRadius: 1,
+        speed: 18,
+        density: 0.24,
+        speciesCount: 6,
+        mutationRate: 0.0035,
+        predationPressure: 0.42,
+        dominanceMode: 'majority',
+        tieRule: 'random',
+        running: false,
+        generation: 0,
+        alive: 0,
+        previousAlive: 0,
+        selectedSpecies: 1,
+        tool: 'draw',
+        pattern: 'glider',
+        patternMode: 'selected',
+        trails: true,
+        grid: true,
+        wrap: true,
+        glow: true,
+        shimmer: true,
+        patternTransform: { mirror: false, rotations: 0 },
+        cells: new Uint8Array(0),
+        nextCells: new Uint8Array(0),
+        ages: new Uint16Array(0),
+        nextAges: new Uint16Array(0),
+        heat: new Float32Array(0),
+        lastSpecies: new Uint8Array(0),
+        population: new Array(MAX_SPECIES + 1).fill(0),
+        history: [],
+        pointerDown: false,
+        lastPainted: -1,
+        lastTime: 0,
+        accumulator: 0,
+        frameCounter: 0,
+        fpsTimer: 0,
+        fps: 0,
+        dirty: true,
+      };
+
+      const storageKey = 'ecosystem-life-lab-state-v1';
+      let resizeTimer = 0;
+      let toastTimer = 0;
+      let rosterFrame = 0;
+
+      function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+      function idx(x, y) { return y * state.cols + x; }
+      function wrapCoord(n, max) { return ((n % max) + max) % max; }
+      function speciesName(species) { return species > 0 ? speciesMeta[species - 1].name : 'None'; }
+      function randomSpecies() { return 1 + Math.floor(Math.random() * state.speciesCount); }
+
+      function randomSpeciesExcept(species) {
+        if (state.speciesCount <= 1) return species;
+        let candidate = randomSpecies();
+        if (candidate === species) candidate = (candidate % state.speciesCount) + 1;
+        return candidate;
+      }
+
+      function hueForSpecies(species, age = 0) {
+        const meta = speciesMeta[Math.max(0, species - 1)] || speciesMeta[0];
+        const shimmer = state.shimmer ? Math.sin((age + species * 17) * 0.09) * 8 : 0;
+        return (meta.hue + shimmer + 360) % 360;
+      }
+
+      function colorForSpecies(species, alpha = 1, age = 0, lightness = 62) {
+        const hue = hueForSpecies(species, age);
+        return `hsla(${hue}, 96%, ${lightness}%, ${alpha})`;
+      }
+
+      function showToast(message) {
+        clearTimeout(toastTimer);
+        ui.toast.textContent = message;
+        ui.toast.classList.add('show');
+        toastTimer = window.setTimeout(() => ui.toast.classList.remove('show'), 1700);
+      }
+
+      function setRunning(running) {
+        state.running = running;
+        controls.playBtn.textContent = running ? '⏸ Pause' : '▶ Play';
+        ui.statusChip.textContent = running ? 'Running' : 'Paused';
+      }
+
+      function beats(a, b) {
+        if (!a || !b || a === b) return false;
+        const n = state.speciesCount;
+        return ((a - b + n) % n) === 1;
+      }
+
+      function predatorOf(species) {
+        return species === state.speciesCount ? 1 : species + 1;
+      }
+
+      function setTool(tool) {
+        state.tool = tool;
+        $$('[data-tool]').forEach((btn) => btn.classList.toggle('active', btn.dataset.tool === tool));
+        updateReadouts(false);
+        showToast(`${toolLabels[tool]} mode`);
+      }
+
+      function updateSpeciesOptions() {
+        const current = Number(controls.speciesSelect.value) || state.selectedSpecies;
+        controls.speciesSelect.innerHTML = '';
+        for (let species = 1; species <= state.speciesCount; species++) {
+          const option = document.createElement('option');
+          option.value = String(species);
+          option.textContent = speciesName(species);
+          controls.speciesSelect.appendChild(option);
+        }
+        state.selectedSpecies = clamp(current, 1, state.speciesCount);
+        controls.speciesSelect.value = String(state.selectedSpecies);
+      }
+
+      function dominantSpecies() {
+        let winner = 0;
+        let best = 0;
+        for (let species = 1; species <= state.speciesCount; species++) {
+          if (state.population[species] > best) {
+            best = state.population[species];
+            winner = species;
+          }
+        }
+        return { species: winner, count: best };
+      }
+
+      function renderSpeciesRoster(force = false) {
+        rosterFrame++;
+        if (!force && state.running && rosterFrame % 2 !== 0) return;
+        const total = Math.max(1, state.alive);
+        const frag = document.createDocumentFragment();
+        for (let species = 1; species <= state.speciesCount; species++) {
+          const count = state.population[species] || 0;
+          const pct = (count / total) * 100;
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = `species-row${species === state.selectedSpecies ? ' active' : ''}`;
+          row.style.setProperty('--species-color', colorForSpecies(species, 1, 0, 60));
+          row.innerHTML = `
+            <span class="swatch" aria-hidden="true"></span>
+            <span class="species-main">
+              <span class="species-name"><span>${speciesName(species)}</span><span>${pct.toFixed(1)}%</span></span>
+              <span class="species-bar" aria-hidden="true"><span style="--pct:${pct}%"></span></span>
+            </span>
+            <span class="species-count">${count.toLocaleString()}</span>
+          `;
+          row.addEventListener('click', () => {
+            state.selectedSpecies = species;
+            controls.speciesSelect.value = String(species);
+            updateReadouts(true);
+            showToast(`Painting ${speciesName(species)}`);
+          });
+          frag.appendChild(row);
+        }
+        ui.speciesRoster.replaceChildren(frag);
+      }
+
+      function updateReadouts(forceRoster = false) {
+        ui.speedOut.textContent = `${state.speed} gps`;
+        ui.densityOut.textContent = `${Math.round(state.density * 100)}%`;
+        ui.speciesOut.textContent = `${state.speciesCount}`;
+        ui.mutationOut.textContent = `${(state.mutationRate * 100).toFixed(2)}%`;
+        ui.pressureOut.textContent = `${Math.round(state.predationPressure * 100)}%`;
+        ui.brushOut.textContent = `${state.brushRadius}`;
+        ui.cellOut.textContent = `${state.cellSize} px`;
+        ui.dominanceName.textContent = dominanceLabels[state.dominanceMode];
+        ui.tieName.textContent = tieLabels[state.tieRule];
+        ui.speciesName.textContent = speciesName(state.selectedSpecies);
+        ui.patternName.textContent = patternDefs[state.pattern].label;
+        ui.patternModeName.textContent = patternModeLabels[state.patternMode];
+        ui.genStat.textContent = state.generation.toLocaleString();
+        ui.aliveStat.textContent = state.alive.toLocaleString();
+        const total = Math.max(1, state.cols * state.rows);
+        ui.densityStat.textContent = `${((state.alive / total) * 100).toFixed(1)}%`;
+        const delta = state.alive - state.previousAlive;
+        ui.deltaStat.textContent = delta > 0 ? `+${delta.toLocaleString()}` : delta.toLocaleString();
+        ui.gridChip.textContent = `${state.cols} × ${state.rows}`;
+        ui.toolChip.textContent = toolLabels[state.tool];
+        ui.speciesChip.textContent = speciesName(state.selectedSpecies);
+        ui.ruleChip.textContent = dominanceLabels[state.dominanceMode].replace(' ecology', '');
+        const dominant = dominantSpecies();
+        ui.dominantChip.textContent = dominant.species ? speciesName(dominant.species) : 'None';
+        ui.fpsText.textContent = `${Math.round(state.fps)} fps`;
+        renderSpeciesRoster(forceRoster);
+        drawPopulationChart();
+      }
+
+      function recountPopulation() {
+        state.previousAlive = state.alive;
+        const pop = new Array(MAX_SPECIES + 1).fill(0);
+        let alive = 0;
+        for (let i = 0; i < state.cells.length; i++) {
+          const species = state.cells[i];
+          if (species) {
+            alive++;
+            pop[species]++;
+            state.lastSpecies[i] = species;
+          }
+        }
+        state.population = pop;
+        state.alive = alive;
+      }
+
+      function pushHistory() {
+        state.history.push(state.population.slice(0, state.speciesCount + 1));
+        if (state.history.length > 180) state.history.shift();
+      }
+
+      function resizeCanvas({ preserve = true } = {}) {
+        const rect = stage.getBoundingClientRect();
+        const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
+        const width = Math.max(320, Math.floor(rect.width));
+        const height = Math.max(320, Math.floor(rect.height));
+        const cols = Math.max(12, Math.floor(width / state.cellSize));
+        const rows = Math.max(12, Math.floor(height / state.cellSize));
+
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        if (cols === state.cols && rows === state.rows && width === state.width && height === state.height) {
+          state.dirty = true;
+          drawPopulationChart(true);
+          return;
+        }
+
+        const oldCols = state.cols;
+        const oldRows = state.rows;
+        const oldCells = state.cells;
+        const oldAges = state.ages;
+        const oldHeat = state.heat;
+        const oldLastSpecies = state.lastSpecies;
+
+        state.cols = cols;
+        state.rows = rows;
+        state.width = width;
+        state.height = height;
+        state.cells = new Uint8Array(cols * rows);
+        state.nextCells = new Uint8Array(cols * rows);
+        state.ages = new Uint16Array(cols * rows);
+        state.nextAges = new Uint16Array(cols * rows);
+        state.heat = new Float32Array(cols * rows);
+        state.lastSpecies = new Uint8Array(cols * rows);
+
+        if (preserve && oldCells.length) {
+          const xOffset = Math.floor((cols - oldCols) / 2);
+          const yOffset = Math.floor((rows - oldRows) / 2);
+          for (let y = 0; y < oldRows; y++) {
+            const ny = y + yOffset;
+            if (ny < 0 || ny >= rows) continue;
+            for (let x = 0; x < oldCols; x++) {
+              const nx = x + xOffset;
+              if (nx < 0 || nx >= cols) continue;
+              const oldI = y * oldCols + x;
+              const newI = idx(nx, ny);
+              state.cells[newI] = oldCells[oldI] <= state.speciesCount ? oldCells[oldI] : ((oldCells[oldI] - 1) % state.speciesCount) + 1;
+              state.ages[newI] = oldAges[oldI] || 0;
+              state.heat[newI] = oldHeat[oldI] || 0;
+              state.lastSpecies[newI] = oldLastSpecies[oldI] <= state.speciesCount ? oldLastSpecies[oldI] : ((oldLastSpecies[oldI] - 1) % state.speciesCount) + 1;
+            }
+          }
+        }
+
+        recountPopulation();
+        updateReadouts(true);
+        state.dirty = true;
+      }
+
+      function randomize(density = state.density) {
+        state.previousAlive = state.alive;
+        const pop = new Array(MAX_SPECIES + 1).fill(0);
+        let alive = 0;
+        for (let i = 0; i < state.cells.length; i++) {
+          const species = Math.random() < density ? randomSpecies() : 0;
+          state.cells[i] = species;
+          state.ages[i] = species ? Math.floor(1 + Math.random() * 24) : 0;
+          state.heat[i] = species ? 1 : 0;
+          state.lastSpecies[i] = species;
+          if (species) {
+            alive++;
+            pop[species]++;
+          }
+        }
+        state.population = pop;
+        state.alive = alive;
+        state.generation = 0;
+        state.history = [];
+        pushHistory();
+        updateReadouts(true);
+        state.dirty = true;
+        showToast(`Randomized ${state.speciesCount} species at ${Math.round(density * 100)}% density`);
+      }
+
+      function clearBoard(notify = true) {
+        state.cells.fill(0);
+        state.nextCells.fill(0);
+        state.ages.fill(0);
+        state.nextAges.fill(0);
+        state.heat.fill(0);
+        state.lastSpecies.fill(0);
+        state.previousAlive = state.alive;
+        state.alive = 0;
+        state.population = new Array(MAX_SPECIES + 1).fill(0);
+        state.generation = 0;
+        state.history = [];
+        pushHistory();
+        updateReadouts(true);
+        state.dirty = true;
+        if (notify) showToast('Ecosystem cleared');
+      }
+
+      function addNeighbor(counts, species) {
+        if (!species) return 0;
+        counts[species]++;
+        return 1;
+      }
+
+      function analyzeNeighbors(x, y, counts) {
+        counts.fill(0);
+        const cells = state.cells;
+        const cols = state.cols;
+        const rows = state.rows;
+        let total = 0;
+        if (state.wrap) {
+          const xm = x === 0 ? cols - 1 : x - 1;
+          const xp = x === cols - 1 ? 0 : x + 1;
+          const ym = y === 0 ? rows - 1 : y - 1;
+          const yp = y === rows - 1 ? 0 : y + 1;
+          const rowM = ym * cols;
+          const row0 = y * cols;
+          const rowP = yp * cols;
+          total += addNeighbor(counts, cells[rowM + xm]);
+          total += addNeighbor(counts, cells[rowM + x]);
+          total += addNeighbor(counts, cells[rowM + xp]);
+          total += addNeighbor(counts, cells[row0 + xm]);
+          total += addNeighbor(counts, cells[row0 + xp]);
+          total += addNeighbor(counts, cells[rowP + xm]);
+          total += addNeighbor(counts, cells[rowP + x]);
+          total += addNeighbor(counts, cells[rowP + xp]);
+        } else {
+          for (let yy = y - 1; yy <= y + 1; yy++) {
+            if (yy < 0 || yy >= rows) continue;
+            const row = yy * cols;
+            for (let xx = x - 1; xx <= x + 1; xx++) {
+              if (xx < 0 || xx >= cols || (xx === x && yy === y)) continue;
+              total += addNeighbor(counts, cells[row + xx]);
+            }
+          }
+        }
+        return total;
+      }
+
+      function tiedCandidates(counts, scores = null) {
+        let best = -Infinity;
+        const candidates = [];
+        for (let species = 1; species <= state.speciesCount; species++) {
+          const score = scores ? scores[species] : counts[species];
+          if (score > best) {
+            best = score;
+            candidates.length = 0;
+            candidates.push(species);
+          } else if (score === best && score > 0) {
+            candidates.push(species);
+          }
+        }
+        return candidates.length ? candidates : [randomSpecies()];
+      }
+
+      function breakTie(candidates) {
+        if (candidates.length <= 1) return candidates[0];
+        if (state.tieRule === 'rarest' || state.dominanceMode === 'diversity') {
+          let rarest = candidates[0];
+          let rareCount = state.population[rarest] || 0;
+          for (const species of candidates) {
+            const count = state.population[species] || 0;
+            if (count < rareCount) {
+              rarest = species;
+              rareCount = count;
+            }
+          }
+          return rarest;
+        }
+        if (state.tieRule === 'predator' || state.dominanceMode === 'predator') {
+          const scores = new Map(candidates.map((species) => [species, 0]));
+          for (const a of candidates) {
+            for (const b of candidates) {
+              if (beats(a, b)) scores.set(a, scores.get(a) + 1);
+            }
+          }
+          let best = candidates[0];
+          let bestScore = scores.get(best);
+          for (const species of candidates) {
+            if (scores.get(species) > bestScore) {
+              best = species;
+              bestScore = scores.get(species);
+            }
+          }
+          return best;
+        }
+        return candidates[Math.floor(Math.random() * candidates.length)];
+      }
+
+      function chooseBirthSpecies(counts) {
+        const effectiveMutation = state.dominanceMode === 'volatile' ? state.mutationRate * 5 : state.mutationRate;
+        if (Math.random() < effectiveMutation) return randomSpecies();
+
+        if (state.dominanceMode === 'predator') {
+          const scores = new Array(MAX_SPECIES + 1).fill(0);
+          for (let species = 1; species <= state.speciesCount; species++) {
+            if (!counts[species]) continue;
+            let score = counts[species] * 10;
+            for (let other = 1; other <= state.speciesCount; other++) {
+              if (!counts[other] || other === species) continue;
+              if (beats(species, other)) score += counts[other] * 6 * state.predationPressure;
+              if (beats(other, species)) score -= counts[other] * 3 * state.predationPressure;
+            }
+            scores[species] = Number(score.toFixed(4));
+          }
+          return breakTie(tiedCandidates(counts, scores));
+        }
+
+        if (state.dominanceMode === 'diversity') {
+          const scores = new Array(MAX_SPECIES + 1).fill(0);
+          const totalAlive = Math.max(1, state.alive);
+          for (let species = 1; species <= state.speciesCount; species++) {
+            if (!counts[species]) continue;
+            const rarity = 1 - ((state.population[species] || 0) / totalAlive);
+            scores[species] = counts[species] * 10 + rarity * 5;
+          }
+          return breakTie(tiedCandidates(counts, scores));
+        }
+
+        return breakTie(tiedCandidates(counts));
+      }
+
+      function maybeConvertSurvivor(species, counts) {
+        if (state.dominanceMode === 'predator') {
+          const predator = predatorOf(species);
+          const predatorCount = counts[predator] || 0;
+          const allyCount = counts[species] || 0;
+          if (predatorCount >= 2 && predatorCount > allyCount && Math.random() < state.predationPressure) {
+            return predator;
+          }
+        }
+
+        if (state.dominanceMode === 'volatile') {
+          if (Math.random() < state.mutationRate * 0.65) return randomSpeciesExcept(species);
+        }
+
+        return species;
+      }
+
+      function stepSimulation(showStepToast = false) {
+        const { cells, nextCells, ages, nextAges, heat, lastSpecies, cols, rows } = state;
+        const counts = new Uint8Array(MAX_SPECIES + 1);
+        const pop = new Array(MAX_SPECIES + 1).fill(0);
+        state.previousAlive = state.alive;
+        let alive = 0;
+
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const i = idx(x, y);
+            const species = cells[i];
+            const neighbors = analyzeNeighbors(x, y, counts);
+            let nextSpecies = 0;
+            let nextAge = 0;
+
+            if (species) {
+              if (neighbors === 2 || neighbors === 3) {
+                nextSpecies = maybeConvertSurvivor(species, counts);
+                nextAge = Math.min(ages[i] + 1, 65535);
+              }
+            } else if (neighbors === 3) {
+              nextSpecies = chooseBirthSpecies(counts);
+              nextAge = 1;
+            }
+
+            nextCells[i] = nextSpecies;
+            nextAges[i] = nextAge;
+            if (nextSpecies) {
+              alive++;
+              pop[nextSpecies]++;
+              heat[i] = 1;
+              lastSpecies[i] = nextSpecies;
+            } else {
+              heat[i] = Math.max(0, heat[i] * 0.86 - 0.008);
+            }
+          }
+        }
+
+        state.cells = nextCells;
+        state.nextCells = cells;
+        state.ages = nextAges;
+        state.nextAges = ages;
+        state.population = pop;
+        state.alive = alive;
+        state.generation++;
+        pushHistory();
+        updateReadouts(false);
+        state.dirty = true;
+        if (showStepToast) showToast('Advanced one ecological generation');
+      }
+
+      function drawRoundedCell(x, y, size, radius) {
+        if (size < 8) {
+          ctx.fillRect(x, y, size, size);
+          return;
+        }
+        ctx.beginPath();
+        ctx.roundRect(x, y, size, size, radius);
+        ctx.fill();
+      }
+
+      function drawBackground() {
+        const bg = ctx.createLinearGradient(0, 0, state.width, state.height);
+        bg.addColorStop(0, 'rgba(3, 7, 18, 0.98)');
+        bg.addColorStop(0.45, 'rgba(5, 15, 36, 0.98)');
+        bg.addColorStop(1, 'rgba(11, 5, 27, 0.98)');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, state.width, state.height);
+
+        const bloom = ctx.createRadialGradient(state.width * 0.52, state.height * 0.46, 0, state.width * 0.52, state.height * 0.46, Math.max(state.width, state.height) * 0.68);
+        bloom.addColorStop(0, 'rgba(99,245,255,0.08)');
+        bloom.addColorStop(0.45, 'rgba(255,79,216,0.045)');
+        bloom.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = bloom;
+        ctx.fillRect(0, 0, state.width, state.height);
+      }
+
+      function drawCells() {
+        const cellSize = state.cellSize;
+        const pad = cellSize >= 11 ? 1.25 : cellSize >= 7 ? 0.75 : 0.15;
+        const drawSize = Math.max(1, cellSize - pad * 2);
+        const radius = Math.max(1, Math.min(7, drawSize * 0.34));
+
+        if (state.trails) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < state.heat.length; i++) {
+            const heat = state.heat[i];
+            if (heat <= 0.035 || state.cells[i]) continue;
+            const species = state.lastSpecies[i];
+            if (!species) continue;
+            const x = (i % state.cols) * cellSize + pad;
+            const y = Math.floor(i / state.cols) * cellSize + pad;
+            ctx.fillStyle = colorForSpecies(species, Math.min(0.34, heat * 0.42), 0, 54);
+            drawRoundedCell(x, y, drawSize, radius);
+          }
+          ctx.restore();
+        }
+
+        ctx.save();
+        ctx.globalCompositeOperation = state.glow ? 'lighter' : 'source-over';
+
+        if (state.glow) {
+          const glowPad = Math.max(1.5, cellSize * 0.34);
+          const glowSize = drawSize + glowPad * 2;
+          for (let i = 0; i < state.cells.length; i++) {
+            const species = state.cells[i];
+            if (!species) continue;
+            const age = state.ages[i];
+            const x = (i % state.cols) * cellSize + pad - glowPad;
+            const y = Math.floor(i / state.cols) * cellSize + pad - glowPad;
+            ctx.fillStyle = colorForSpecies(species, 0.105, age, 62);
+            ctx.fillRect(x, y, glowSize, glowSize);
+          }
+        }
+
+        for (let i = 0; i < state.cells.length; i++) {
+          const species = state.cells[i];
+          if (!species) continue;
+          const age = state.ages[i];
+          const x = (i % state.cols) * cellSize + pad;
+          const y = Math.floor(i / state.cols) * cellSize + pad;
+          const pulse = 0.52 + Math.min(0.24, age / 90) + Math.sin((age + species * 19) * 0.13) * 0.045;
+          const lightness = 52 + Math.min(16, age * 0.12);
+          ctx.fillStyle = colorForSpecies(species, clamp(pulse, 0.48, 0.86), age, lightness);
+          drawRoundedCell(x, y, drawSize, radius);
+
+          if (cellSize >= 9) {
+            ctx.fillStyle = colorForSpecies(species, 0.18, age, 84);
+            drawRoundedCell(x + drawSize * 0.16, y + drawSize * 0.14, drawSize * 0.32, Math.max(1, drawSize * 0.18), Math.max(1, radius * 0.40));
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawGrid() {
+        if (!state.grid || state.cellSize < 6) return;
+        ctx.save();
+        ctx.beginPath();
+        for (let x = 0; x <= state.cols; x++) {
+          const px = x * state.cellSize + 0.5;
+          ctx.moveTo(px, 0);
+          ctx.lineTo(px, state.rows * state.cellSize);
+        }
+        for (let y = 0; y <= state.rows; y++) {
+          const py = y * state.cellSize + 0.5;
+          ctx.moveTo(0, py);
+          ctx.lineTo(state.cols * state.cellSize, py);
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.055)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function draw() {
+        if (!state.width || !state.height) return;
+        drawBackground();
+        drawCells();
+        drawGrid();
+        state.dirty = false;
+      }
+
+      function drawPopulationChart(forceResize = false) {
+        const rect = chartCanvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
+        const width = Math.floor(rect.width * dpr);
+        const height = Math.floor(rect.height * dpr);
+        if (forceResize || chartCanvas.width !== width || chartCanvas.height !== height) {
+          chartCanvas.width = width;
+          chartCanvas.height = height;
+          chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        const w = rect.width;
+        const h = rect.height;
+        chartCtx.clearRect(0, 0, w, h);
+        const bg = chartCtx.createLinearGradient(0, 0, w, h);
+        bg.addColorStop(0, 'rgba(255,255,255,0.055)');
+        bg.addColorStop(1, 'rgba(255,255,255,0.018)');
+        chartCtx.fillStyle = bg;
+        chartCtx.fillRect(0, 0, w, h);
+
+        chartCtx.strokeStyle = 'rgba(255,255,255,0.07)';
+        chartCtx.lineWidth = 1;
+        for (let y = 0.25; y < 1; y += 0.25) {
+          chartCtx.beginPath();
+          chartCtx.moveTo(0, h * y);
+          chartCtx.lineTo(w, h * y);
+          chartCtx.stroke();
+        }
+
+        if (!state.history.length) return;
+        const barW = Math.max(1, w / state.history.length);
+        for (let i = 0; i < state.history.length; i++) {
+          const pop = state.history[i];
+          const total = Math.max(1, pop.reduce((sum, n) => sum + n, 0));
+          let y = h;
+          for (let species = 1; species <= state.speciesCount; species++) {
+            const segment = (pop[species] || 0) / total * h;
+            if (segment <= 0.2) continue;
+            y -= segment;
+            chartCtx.fillStyle = colorForSpecies(species, 0.72, i, 58);
+            chartCtx.fillRect(i * barW, y, Math.ceil(barW) + 0.5, segment + 0.5);
+          }
+        }
+      }
+
+      function setCell(x, y, species) {
+        if (state.wrap) {
+          x = wrapCoord(x, state.cols);
+          y = wrapCoord(y, state.rows);
+        } else if (x < 0 || y < 0 || x >= state.cols || y >= state.rows) {
+          return false;
+        }
+        const i = idx(x, y);
+        state.cells[i] = species;
+        state.ages[i] = species ? Math.max(1, state.ages[i] || 1) : 0;
+        state.heat[i] = species ? 1 : Math.max(0, state.heat[i] * 0.92);
+        if (species) state.lastSpecies[i] = species;
+        return true;
+      }
+
+      function paintAt(x, y) {
+        const r = state.brushRadius;
+        for (let yy = y - r; yy <= y + r; yy++) {
+          for (let xx = x - r; xx <= x + r; xx++) {
+            if (r > 0 && (xx - x) * (xx - x) + (yy - y) * (yy - y) > (r + 0.35) * (r + 0.35)) continue;
+            let nx = xx;
+            let ny = yy;
+            if (state.wrap) {
+              nx = wrapCoord(nx, state.cols);
+              ny = wrapCoord(ny, state.rows);
+            } else if (nx < 0 || ny < 0 || nx >= state.cols || ny >= state.rows) {
+              continue;
+            }
+            const i = idx(nx, ny);
+            if (state.tool === 'draw') {
+              setCell(nx, ny, state.selectedSpecies);
+            } else if (state.tool === 'erase') {
+              setCell(nx, ny, 0);
+            } else if (state.tool === 'toggle') {
+              setCell(nx, ny, state.cells[i] ? 0 : state.selectedSpecies);
+            }
+          }
+        }
+        recountPopulation();
+        pushHistory();
+        updateReadouts(false);
+        state.dirty = true;
+      }
+
+      function cellFromEvent(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor((event.clientX - rect.left) / state.cellSize);
+        const y = Math.floor((event.clientY - rect.top) / state.cellSize);
+        if (x < 0 || y < 0 || x >= state.cols || y >= state.rows) return null;
+        return { x, y, index: idx(x, y) };
+      }
+
+      function handlePointer(event) {
+        const cell = cellFromEvent(event);
+        if (!cell) return;
+        if (state.tool === 'stamp') {
+          if (state.lastPainted === cell.index) return;
+          placePattern(state.pattern, cell.x, cell.y, true);
+          state.lastPainted = cell.index;
+          return;
+        }
+        if (state.tool === 'toggle' && state.lastPainted === cell.index) return;
+        paintAt(cell.x, cell.y);
+        state.lastPainted = cell.index;
+      }
+
+      function transformedPatternCells(key) {
+        let cells = patternDefs[key].cells.map(([x, y]) => [state.patternTransform.mirror ? -x : x, y]);
+        for (let r = 0; r < state.patternTransform.rotations; r++) {
+          cells = cells.map(([x, y]) => [y, -x]);
+        }
+        const minX = Math.min(...cells.map(([x]) => x));
+        const minY = Math.min(...cells.map(([, y]) => y));
+        return cells.map(([x, y]) => [x - minX, y - minY]);
+      }
+
+      function patternSpeciesAt(n, x, y) {
+        if (state.patternMode === 'random') return randomSpecies();
+        if (state.patternMode === 'gradient') return 1 + Math.abs(x + y + n) % state.speciesCount;
+        if (state.patternMode === 'rivals') {
+          const rival = predatorOf(state.selectedSpecies);
+          return (x + y + n) % 2 === 0 ? state.selectedSpecies : rival;
+        }
+        return state.selectedSpecies;
+      }
+
+      function placePattern(key, anchorX = Math.floor(state.cols / 2), anchorY = Math.floor(state.rows / 2), centered = true) {
+        const cells = transformedPatternCells(key);
+        const maxX = Math.max(...cells.map(([x]) => x));
+        const maxY = Math.max(...cells.map(([, y]) => y));
+        const startX = centered ? anchorX - Math.floor(maxX / 2) : anchorX;
+        const startY = centered ? anchorY - Math.floor(maxY / 2) : anchorY;
+        cells.forEach(([x, y], n) => {
+          setCell(startX + x, startY + y, patternSpeciesAt(n, x, y));
+        });
+        recountPopulation();
+        pushHistory();
+        updateReadouts(true);
+        state.dirty = true;
+        showToast(`${patternDefs[key].label} stamped`);
+      }
+
+      function applySpeciesCount(count) {
+        state.speciesCount = clamp(count, 2, MAX_SPECIES);
+        state.selectedSpecies = clamp(state.selectedSpecies, 1, state.speciesCount);
+        for (let i = 0; i < state.cells.length; i++) {
+          if (state.cells[i] > state.speciesCount) state.cells[i] = ((state.cells[i] - 1) % state.speciesCount) + 1;
+          if (state.lastSpecies[i] > state.speciesCount) state.lastSpecies[i] = ((state.lastSpecies[i] - 1) % state.speciesCount) + 1;
+        }
+        updateSpeciesOptions();
+        recountPopulation();
+        pushHistory();
+        updateReadouts(true);
+        state.dirty = true;
+      }
+
+      function balanceSpecies() {
+        let n = 0;
+        for (let i = 0; i < state.cells.length; i++) {
+          if (!state.cells[i]) continue;
+          const species = 1 + (n % state.speciesCount);
+          state.cells[i] = species;
+          state.lastSpecies[i] = species;
+          n++;
+        }
+        recountPopulation();
+        pushHistory();
+        updateReadouts(true);
+        state.dirty = true;
+        showToast('Live cells redistributed across species');
+      }
+
+      function invasionPulse() {
+        const invader = randomSpeciesExcept(state.selectedSpecies);
+        const clusters = 5 + Math.floor(Math.random() * 9);
+        const oldSelected = state.selectedSpecies;
+        const oldMode = state.patternMode;
+        state.selectedSpecies = invader;
+        state.patternMode = Math.random() > 0.45 ? 'selected' : 'rivals';
+        for (let i = 0; i < clusters; i++) {
+          const keys = ['glider', 'rPentomino', 'acorn', 'lwss'];
+          const key = keys[Math.floor(Math.random() * keys.length)];
+          placePattern(key, Math.floor(Math.random() * state.cols), Math.floor(Math.random() * state.rows), true);
+        }
+        state.selectedSpecies = oldSelected;
+        state.patternMode = oldMode;
+        controls.speciesSelect.value = String(state.selectedSpecies);
+        controls.patternModeSelect.value = state.patternMode;
+        updateReadouts(true);
+        showToast(`${speciesName(invader)} invasion pulse seeded`);
+      }
+
+      function seedEcosystem() {
+        clearBoard(false);
+        const speciesCount = 4 + Math.floor(Math.random() * 6);
+        controls.speciesSlider.value = String(speciesCount);
+        applySpeciesCount(speciesCount);
+        const modes = ['majority', 'predator', 'diversity', 'volatile'];
+        state.dominanceMode = modes[Math.floor(Math.random() * modes.length)];
+        state.tieRule = Math.random() > 0.5 ? 'random' : 'rarest';
+        state.mutationRate = (0.12 + Math.random() * 0.95) / 100;
+        state.predationPressure = 0.25 + Math.random() * 0.55;
+        state.density = 0.12 + Math.random() * 0.18;
+        controls.dominanceSelect.value = state.dominanceMode;
+        controls.tieSelect.value = state.tieRule;
+        controls.mutationSlider.value = String((state.mutationRate * 100).toFixed(2));
+        controls.pressureSlider.value = String(Math.round(state.predationPressure * 100));
+        controls.densitySlider.value = String(Math.round(state.density * 100));
+        randomize(state.density);
+        const patternKeys = Object.keys(patternDefs);
+        const oldMode = state.patternMode;
+        state.patternMode = Math.random() > 0.5 ? 'gradient' : 'rivals';
+        const stamps = 8 + Math.floor(Math.random() * 14);
+        for (let n = 0; n < stamps; n++) {
+          state.selectedSpecies = randomSpecies();
+          const key = patternKeys[Math.floor(Math.random() * patternKeys.length)];
+          placePattern(key, Math.floor(Math.random() * state.cols), Math.floor(Math.random() * state.rows), true);
+        }
+        state.patternMode = oldMode;
+        controls.patternModeSelect.value = state.patternMode;
+        setRunning(true);
+        updateReadouts(true);
+        showToast('New ecosystem seeded');
+      }
+
+      function saveState() {
+        try {
+          const liveCells = [];
+          for (let i = 0; i < state.cells.length; i++) {
+            const species = state.cells[i];
+            if (species) liveCells.push([i % state.cols, Math.floor(i / state.cols), species, state.ages[i]]);
+          }
+          const payload = {
+            version: 1,
+            cols: state.cols,
+            rows: state.rows,
+            cellSize: state.cellSize,
+            generation: state.generation,
+            speciesCount: state.speciesCount,
+            selectedSpecies: state.selectedSpecies,
+            mutationRate: state.mutationRate,
+            predationPressure: state.predationPressure,
+            dominanceMode: state.dominanceMode,
+            tieRule: state.tieRule,
+            pattern: state.pattern,
+            patternMode: state.patternMode,
+            patternTransform: state.patternTransform,
+            cells: liveCells,
+          };
+          localStorage.setItem(storageKey, JSON.stringify(payload));
+          showToast(`Saved ${liveCells.length.toLocaleString()} live cells`);
+        } catch (err) {
+          showToast('Could not save state');
+          console.error(err);
+        }
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(storageKey);
+          if (!raw) {
+            showToast('No saved ecosystem found');
+            return;
+          }
+          const payload = JSON.parse(raw);
+          clearBoard(false);
+          state.speciesCount = clamp(Number(payload.speciesCount) || 6, 2, MAX_SPECIES);
+          state.selectedSpecies = clamp(Number(payload.selectedSpecies) || 1, 1, state.speciesCount);
+          state.mutationRate = clamp(Number(payload.mutationRate) || 0, 0, 0.05);
+          state.predationPressure = clamp(Number(payload.predationPressure) || 0.42, 0, 1);
+          state.generation = Number(payload.generation) || 0;
+          if (dominanceLabels[payload.dominanceMode]) state.dominanceMode = payload.dominanceMode;
+          if (tieLabels[payload.tieRule]) state.tieRule = payload.tieRule;
+          if (patternDefs[payload.pattern]) state.pattern = payload.pattern;
+          if (patternModeLabels[payload.patternMode]) state.patternMode = payload.patternMode;
+          if (payload.patternTransform) {
+            state.patternTransform.mirror = Boolean(payload.patternTransform.mirror);
+            state.patternTransform.rotations = Number(payload.patternTransform.rotations) % 4 || 0;
+          }
+          updateSpeciesOptions();
+          controls.speciesSlider.value = String(state.speciesCount);
+          controls.speciesSelect.value = String(state.selectedSpecies);
+          controls.mutationSlider.value = String((state.mutationRate * 100).toFixed(2));
+          controls.pressureSlider.value = String(Math.round(state.predationPressure * 100));
+          controls.dominanceSelect.value = state.dominanceMode;
+          controls.tieSelect.value = state.tieRule;
+          controls.patternSelect.value = state.pattern;
+          controls.patternModeSelect.value = state.patternMode;
+
+          const xOffset = Math.floor((state.cols - payload.cols) / 2);
+          const yOffset = Math.floor((state.rows - payload.rows) / 2);
+          for (const [x0, y0, species0, age0] of payload.cells || []) {
+            const x = x0 + xOffset;
+            const y = y0 + yOffset;
+            if (x < 0 || y < 0 || x >= state.cols || y >= state.rows) continue;
+            const species = clamp(Number(species0) || 1, 1, state.speciesCount);
+            const i = idx(x, y);
+            state.cells[i] = species;
+            state.ages[i] = Number(age0) || 1;
+            state.heat[i] = 1;
+            state.lastSpecies[i] = species;
+          }
+          recountPopulation();
+          state.history = [];
+          pushHistory();
+          updateReadouts(true);
+          state.dirty = true;
+          showToast('Saved ecosystem loaded');
+        } catch (err) {
+          showToast('Could not load state');
+          console.error(err);
+        }
+      }
+
+      function exportPNG() {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            showToast('Could not export image');
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `ecosystem-life-gen-${state.generation}.png`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          showToast('PNG exported');
+        }, 'image/png');
+      }
+
+      function bindEvents() {
+        controls.playBtn.addEventListener('click', () => setRunning(!state.running));
+        controls.stepBtn.addEventListener('click', () => stepSimulation(true));
+        controls.randomBtn.addEventListener('click', () => randomize());
+        controls.clearBtn.addEventListener('click', () => clearBoard());
+
+        controls.speedSlider.addEventListener('input', (event) => {
+          state.speed = Number(event.target.value);
+          updateReadouts(false);
+        });
+        controls.densitySlider.addEventListener('input', (event) => {
+          state.density = Number(event.target.value) / 100;
+          updateReadouts(false);
+        });
+        controls.speciesSlider.addEventListener('input', (event) => {
+          applySpeciesCount(Number(event.target.value));
+        });
+        controls.mutationSlider.addEventListener('input', (event) => {
+          state.mutationRate = Number(event.target.value) / 100;
+          updateReadouts(false);
+        });
+        controls.pressureSlider.addEventListener('input', (event) => {
+          state.predationPressure = Number(event.target.value) / 100;
+          updateReadouts(false);
+        });
+        controls.dominanceSelect.addEventListener('change', (event) => {
+          state.dominanceMode = event.target.value;
+          updateReadouts(true);
+          showToast(dominanceLabels[state.dominanceMode]);
+        });
+        controls.tieSelect.addEventListener('change', (event) => {
+          state.tieRule = event.target.value;
+          updateReadouts(false);
+        });
+        controls.speciesSelect.addEventListener('change', (event) => {
+          state.selectedSpecies = Number(event.target.value);
+          updateReadouts(true);
+          showToast(`Painting ${speciesName(state.selectedSpecies)}`);
+        });
+        controls.brushSlider.addEventListener('input', (event) => {
+          state.brushRadius = Number(event.target.value);
+          updateReadouts(false);
+        });
+        controls.cellSlider.addEventListener('input', (event) => {
+          state.cellSize = Number(event.target.value);
+          updateReadouts(false);
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => resizeCanvas({ preserve: true }), 90);
+        });
+        controls.patternSelect.addEventListener('change', (event) => {
+          state.pattern = event.target.value;
+          updateReadouts(false);
+        });
+        controls.patternModeSelect.addEventListener('change', (event) => {
+          state.patternMode = event.target.value;
+          updateReadouts(false);
+        });
+
+        controls.trailsToggle.addEventListener('change', (event) => { state.trails = event.target.checked; state.dirty = true; showToast(state.trails ? 'Trails on' : 'Trails off'); });
+        controls.gridToggle.addEventListener('change', (event) => { state.grid = event.target.checked; state.dirty = true; showToast(state.grid ? 'Grid on' : 'Grid off'); });
+        controls.wrapToggle.addEventListener('change', (event) => { state.wrap = event.target.checked; showToast(state.wrap ? 'Edges wrap' : 'Edges bounded'); });
+        controls.glowToggle.addEventListener('change', (event) => { state.glow = event.target.checked; state.dirty = true; showToast(state.glow ? 'Glow on' : 'Glow off'); });
+        controls.shimmerToggle.addEventListener('change', (event) => { state.shimmer = event.target.checked; state.dirty = true; showToast(state.shimmer ? 'Age shimmer on' : 'Age shimmer off'); });
+
+        $$('[data-tool]').forEach((btn) => btn.addEventListener('click', () => setTool(btn.dataset.tool)));
+        controls.centerPatternBtn.addEventListener('click', () => placePattern(state.pattern));
+        controls.mirrorPatternBtn.addEventListener('click', () => {
+          state.patternTransform.mirror = !state.patternTransform.mirror;
+          showToast(state.patternTransform.mirror ? 'Pattern mirrored' : 'Pattern mirror reset');
+        });
+        controls.rotatePatternBtn.addEventListener('click', () => {
+          state.patternTransform.rotations = (state.patternTransform.rotations + 1) % 4;
+          showToast(`Pattern rotated ${state.patternTransform.rotations * 90}°`);
+        });
+        controls.saveStateBtn.addEventListener('click', saveState);
+        controls.loadStateBtn.addEventListener('click', loadState);
+        controls.pngBtn.addEventListener('click', exportPNG);
+        controls.balanceBtn.addEventListener('click', balanceSpecies);
+        controls.surpriseBtn.addEventListener('click', seedEcosystem);
+        controls.invasionBtn.addEventListener('click', invasionPulse);
+
+        controls.helpBtn.addEventListener('click', () => { ui.helpModal.hidden = false; });
+        controls.closeHelpBtn.addEventListener('click', () => { ui.helpModal.hidden = true; });
+        ui.helpModal.addEventListener('click', (event) => {
+          if (event.target === ui.helpModal) ui.helpModal.hidden = true;
+        });
+        controls.togglePanelBtn.addEventListener('click', () => {
+          app.classList.toggle('hidden-panel');
+          const hidden = app.classList.contains('hidden-panel');
+          controls.togglePanelBtn.textContent = hidden ? 'Show controls' : 'Hide controls';
+          window.setTimeout(() => resizeCanvas({ preserve: true }), 80);
+        });
+
+        canvas.addEventListener('pointerdown', (event) => {
+          canvas.setPointerCapture(event.pointerId);
+          state.pointerDown = true;
+          state.lastPainted = -1;
+          handlePointer(event);
+        });
+        canvas.addEventListener('pointermove', (event) => {
+          if (!state.pointerDown) return;
+          handlePointer(event);
+        });
+        canvas.addEventListener('pointerup', (event) => {
+          state.pointerDown = false;
+          state.lastPainted = -1;
+          try { canvas.releasePointerCapture(event.pointerId); } catch (_) {}
+        });
+        canvas.addEventListener('pointercancel', () => {
+          state.pointerDown = false;
+          state.lastPainted = -1;
+        });
+
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => resizeCanvas({ preserve: true }), 120);
+        });
+
+        window.addEventListener('keydown', (event) => {
+          if (event.target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)) return;
+          const key = event.key.toLowerCase();
+          if (key === ' ') {
+            event.preventDefault();
+            setRunning(!state.running);
+          } else if (key === 's') {
+            stepSimulation(true);
+          } else if (key === 'r') {
+            randomize();
+          } else if (key === 'c') {
+            clearBoard();
+          } else if (key === 'g') {
+            state.grid = !state.grid;
+            controls.gridToggle.checked = state.grid;
+            state.dirty = true;
+            showToast(state.grid ? 'Grid on' : 'Grid off');
+          } else if (key === 't') {
+            state.trails = !state.trails;
+            controls.trailsToggle.checked = state.trails;
+            state.dirty = true;
+            showToast(state.trails ? 'Trails on' : 'Trails off');
+          } else if (['1','2','3','4'].includes(key)) {
+            const tools = ['draw', 'erase', 'toggle', 'stamp'];
+            setTool(tools[Number(key) - 1]);
+          } else if (key === 'escape') {
+            ui.helpModal.hidden = true;
+          }
+        });
+      }
+
+      function loop(now) {
+        if (!state.lastTime) state.lastTime = now;
+        const dt = Math.min(80, now - state.lastTime);
+        state.lastTime = now;
+        state.frameCounter++;
+        state.fpsTimer += dt;
+        if (state.fpsTimer >= 500) {
+          state.fps = state.frameCounter / state.fpsTimer * 1000;
+          state.frameCounter = 0;
+          state.fpsTimer = 0;
+          ui.fpsText.textContent = `${Math.round(state.fps)} fps`;
+        }
+
+        if (state.running) {
+          state.accumulator += dt;
+          const interval = 1000 / Math.max(1, state.speed);
+          let safety = 0;
+          while (state.accumulator >= interval && safety < 6) {
+            stepSimulation(false);
+            state.accumulator -= interval;
+            safety++;
+          }
+        }
+
+        if (state.dirty || state.running) draw();
+        requestAnimationFrame(loop);
+      }
+
+      function init() {
+        state.speed = Number(controls.speedSlider.value);
+        state.density = Number(controls.densitySlider.value) / 100;
+        state.speciesCount = Number(controls.speciesSlider.value);
+        state.mutationRate = Number(controls.mutationSlider.value) / 100;
+        state.predationPressure = Number(controls.pressureSlider.value) / 100;
+        state.dominanceMode = controls.dominanceSelect.value;
+        state.tieRule = controls.tieSelect.value;
+        state.brushRadius = Number(controls.brushSlider.value);
+        state.cellSize = Number(controls.cellSlider.value);
+        state.pattern = controls.patternSelect.value;
+        state.patternMode = controls.patternModeSelect.value;
+        state.trails = controls.trailsToggle.checked;
+        state.grid = controls.gridToggle.checked;
+        state.wrap = controls.wrapToggle.checked;
+        state.glow = controls.glowToggle.checked;
+        state.shimmer = controls.shimmerToggle.checked;
+        updateSpeciesOptions();
+        bindEvents();
+        resizeCanvas({ preserve: false });
+        randomize(0.17);
+        state.patternMode = 'gradient';
+        controls.patternModeSelect.value = state.patternMode;
+        placePattern('gosper', Math.floor(state.cols * 0.28), Math.floor(state.rows * 0.56), true);
+        state.patternMode = 'rivals';
+        controls.patternModeSelect.value = state.patternMode;
+        state.selectedSpecies = 2;
+        controls.speciesSelect.value = '2';
+        placePattern('pulsar', Math.floor(state.cols * 0.72), Math.floor(state.rows * 0.30), true);
+        state.selectedSpecies = 4;
+        controls.speciesSelect.value = '4';
+        placePattern('acorn', Math.floor(state.cols * 0.43), Math.floor(state.rows * 0.20), true);
+        state.selectedSpecies = 1;
+        state.patternMode = 'selected';
+        controls.speciesSelect.value = '1';
+        controls.patternModeSelect.value = state.patternMode;
+        state.generation = 0;
+        state.history = [];
+        recountPopulation();
+        pushHistory();
+        setRunning(false);
+        updateReadouts(true);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
