@@ -106,6 +106,7 @@
       align-items: flex-end;
       justify-content: space-between;
       gap: 20px;
+      min-width: 0;
       padding: 22px 24px;
       border: 1px solid var(--border);
       border-radius: var(--radius-xl);
@@ -168,11 +169,14 @@
     .stage-shell {
       position: relative;
       min-height: 0;
+      min-width: 0;
     }
 
     .stage {
       position: sticky;
       top: 22px;
+      width: 100%;
+      min-width: 0;
       height: calc(100vh - 182px);
       min-height: 560px;
       overflow: hidden;
@@ -242,6 +246,10 @@
       box-shadow: 0 12px 28px rgba(0,0,0,0.22);
     }
 
+    .chip-label {
+      flex: 0 0 auto;
+    }
+
     .chip strong {
       color: var(--text);
       font-weight: 800;
@@ -279,6 +287,7 @@
 
     .control-panel {
       min-height: 0;
+      min-width: 0;
     }
 
     .panel-inner {
@@ -804,27 +813,41 @@
       }
       .hero-actions {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         width: 100%;
         min-width: 0;
       }
-      .stage { min-height: 420px; height: 62vh; }
+      .stage {
+        height: min(54vh, 440px);
+        height: min(54dvh, 440px);
+        min-height: 320px;
+      }
       .panel-inner { grid-template-columns: 1fr; }
       .canvas-hud {
-        inset: 10px 10px auto;
+        inset: 8px 8px auto;
         flex-direction: column;
+        gap: 6px;
       }
       .chip-row {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
         width: 100%;
         max-width: 100%;
       }
       .chip {
         justify-content: center;
+        min-height: 28px;
+        padding: 5px 7px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        gap: 4px;
+      }
+      .chip-label {
+        display: none;
       }
       .chip strong {
-        white-space: normal;
+        white-space: nowrap;
       }
       .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .shortcut-grid { grid-template-columns: 1fr; }
@@ -844,6 +867,43 @@
       }
       .btn {
         padding-inline: 10px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .app {
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
+      }
+      .hero {
+        padding: 14px;
+      }
+      h1 {
+        font-size: 1.65rem;
+      }
+      .subtitle {
+        font-size: 0.88rem;
+        line-height: 1.38;
+      }
+      .btn {
+        min-height: 38px;
+        font-size: 0.78rem;
+      }
+      .stage {
+        height: 42vh;
+        height: 42dvh;
+        min-height: 280px;
+      }
+      .canvas-hud {
+        inset: 6px 6px auto;
+      }
+      .chip-row {
+        gap: 4px;
+      }
+      .chip {
+        min-height: 26px;
+        padding: 4px 5px;
+        font-size: 0.66rem;
       }
     }
 
@@ -871,14 +931,14 @@
         <canvas id="lifeCanvas" aria-label="Interactive Ecosystem Life canvas"></canvas>
         <div class="canvas-hud" aria-hidden="true">
           <div class="chip-row">
-            <div class="chip">Tool <strong id="toolChip">Draw</strong></div>
-            <div class="chip">Species <strong id="speciesChip">Cyan bloom</strong></div>
-            <div class="chip">Rule <strong id="ruleChip">Majority</strong></div>
+            <div class="chip"><span class="chip-label">Tool</span><strong id="toolChip">Draw</strong></div>
+            <div class="chip"><span class="chip-label">Species</span><strong id="speciesChip">Cyan bloom</strong></div>
+            <div class="chip"><span class="chip-label">Rule</span><strong id="ruleChip">Majority</strong></div>
           </div>
           <div class="chip-row">
-            <div class="chip">Cells <strong id="gridChip">0 × 0</strong></div>
-            <div class="chip">Dominant <strong id="dominantChip">None</strong></div>
-            <div class="chip">Status <strong id="statusChip">Paused</strong></div>
+            <div class="chip"><span class="chip-label">Cells</span><strong id="gridChip">0 × 0</strong></div>
+            <div class="chip"><span class="chip-label">Dominant</span><strong id="dominantChip">None</strong></div>
+            <div class="chip"><span class="chip-label">Status</span><strong id="statusChip">Paused</strong></div>
           </div>
         </div>
         <div class="toast" id="toast" role="status" aria-live="polite">Ready</div>
@@ -1500,8 +1560,8 @@
       function resizeCanvas({ preserve = true } = {}) {
         const rect = stage.getBoundingClientRect();
         const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
-        const width = Math.max(320, Math.floor(rect.width));
-        const height = Math.max(320, Math.floor(rect.height));
+        const width = Math.max(1, Math.floor(stage.clientWidth || rect.width));
+        const height = Math.max(1, Math.floor(stage.clientHeight || rect.height));
         const cols = Math.max(12, Math.floor(width / state.cellSize));
         const rows = Math.max(12, Math.floor(height / state.cellSize));
 
